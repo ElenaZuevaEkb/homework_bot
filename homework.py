@@ -42,17 +42,12 @@ HOMEWORK_VERDICTS = {
 
 def check_tokens():
     """Функция проверки доступности переменных окружения."""
-    try:
-        if PRACTICUM_TOKEN is None:
-            logging.critical("Отсутствует PRACTICUM_TOKEN")
-        if TELEGRAM_TOKEN is None:
-            logging.critical("Отсутствует TELEGRAM_TOKEN")
-        if TELEGRAM_CHAT_ID is None:
-            logging.critical("Отсутствует TELEGRAM_CHAT_ID")
-        return (TELEGRAM_TOKEN == "def" or PRACTICUM_TOKEN == "def"
-                or TELEGRAM_CHAT_ID == "def")
-    except Exception:
-        raise Exception("Ошибка получения переменных из .env")
+    MESSAGE_FOR_CHECK_TOKENS = "Ошибка получения переменных"
+    for var in PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID:
+        if not var:
+            message = MESSAGE_FOR_CHECK_TOKENS
+            logger.critical(message)
+            raise ValueError(message)
 
 
 def send_message(bot, message):
@@ -65,23 +60,17 @@ def send_message(bot, message):
 
 
 def get_api_answer(timestamp):
-    """Функция запроса ответа от API."""
-    timestamp1 = timestamp or int(time.time())
-    params = {'from_date': timestamp1}
-    response = requests.get(
-        ENDPOINT,
-        headers=HEADERS,
-        params=params
-    )
-    response_content = response.json()
-    if response.status_code == HTTPStatus.OK:
-        return response_content
-    else:
-        raise requests.RequestException(
-            'Ошибка при обращении к API Яндекс.Практикума: ',
-            f'Код ответа: {response_content.get("code")}',
-            f'Сообщение сервера: {response_content.get("message")}'
-        )
+    """Делает запрос к единственному эндпоинту API-сервиса"""
+    logging.info('Начали запрос к API')
+    CURRENT_TIMESTAMP = timestamp or int(time.time())
+    payload = {'from_date': CURRENT_TIMESTAMP}
+    try:
+        response = requests.get(ENDPOINT, headers=HEADERS, params=payload)
+    except Exception as error:
+        raise KeyError(f'Сбой в работе программы: {error}')
+    if response.status_code != HTTPStatus.OK:
+        raise requests.HTTPError(response)
+    return response.json()
 
 
 def check_response(response):
