@@ -65,7 +65,7 @@ def send_message(bot, message):
 
 
 def get_api_answer(timestamp):
-    """Делает запрос к единственному эндпоинту API-сервиса"""
+    """Делает запрос к единственному эндпоинту API-сервиса."""
     logging.info('Начали запрос к API')
     CURRENT_TIMESTAMP = timestamp or int(time.time())
     payload = {'from_date': CURRENT_TIMESTAMP}
@@ -79,7 +79,7 @@ def get_api_answer(timestamp):
 
 
 def check_response(response):
-    """Функция проверки ответа API на соответствие"""
+    """Функция проверки ответа API на соответствие."""
     if not isinstance(response, dict):
         logger.error("homeworks не словарь")
         raise TypeError("homeworks не словарь")
@@ -110,7 +110,6 @@ def parse_status(homework):
 
 def main():
     """Основная логика работы бота."""
-
     logger.info('Бот начал работу')
     if not check_tokens():
         logger.critical("Проблемы с переменными окружения")
