@@ -42,12 +42,16 @@ HOMEWORK_VERDICTS = {
 
 def check_tokens():
     """Функция проверки доступности переменных окружения."""
-    MESSAGE_FOR_CHECK_TOKENS = "Ошибка получения переменных"
-    for var in PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID:
-        if not var:
-            message = MESSAGE_FOR_CHECK_TOKENS
-            logger.critical(message)
-            raise ValueError(message)
+    if PRACTICUM_TOKEN is None:
+        logging.critical("Отсутствует PRACTICUM_TOKEN")
+        raise Exception("Отсутствует PRACTICUM_TOKEN")
+    if TELEGRAM_TOKEN is None:
+        logging.critical("Отсутствует TELEGRAM_TOKEN")
+        raise Exception("Отсутствует TELEGRAM_TOKEN")
+    if TELEGRAM_CHAT_ID is None:
+        logging.critical("Отсутствует TELEGRAM_CHAT_ID")
+        raise Exception("Отсутствует TELEGRAM_CHAT_ID")
+    return TELEGRAM_CHAT_ID and TELEGRAM_TOKEN and PRACTICUM_TOKEN
 
 
 def send_message(bot, message):
@@ -57,6 +61,7 @@ def send_message(bot, message):
         logging.debug('Сообщение отправлено')
     except Exception as error:
         logging.error(f'Сообщение не было отправлено {error}')
+        raise Exception('Сообщение не было отправлено')
 
 
 def get_api_answer(timestamp):
@@ -109,7 +114,7 @@ def main():
     logger.info('Бот начал работу')
     if not check_tokens():
         logger.critical("Проблемы с переменными окружения")
-        sys.exit("Принудительное отключение")
+        raise ValueError("Проблемы с переменными окружения")
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time())
 
@@ -121,10 +126,13 @@ def main():
                 status = parse_status(homeworks.get("homeworks")[0])
                 send_message(bot, status)
                 logger.debug("Новый статус работы")
-            time.sleep(RETRY_PERIOD)
+            else:
+                logger.debug("Нет нового статуса работы")
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             send_message(bot, message)
+        finally:
+            time.sleep(RETRY_PERIOD)
 
 
 if __name__ == '__main__':
