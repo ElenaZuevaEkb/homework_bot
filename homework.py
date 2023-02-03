@@ -45,12 +45,17 @@ def get_api_answer(timestamp):
     logging.info('Начали запрос к API')
     current_timestamp = timestamp or int(time.time())
     payload = {'from_date': current_timestamp}
+    params_api = {'url': ENDPOINT, 'headers': HEADERS, 'params': payload}
     try:
-        response = requests.get(ENDPOINT, headers=HEADERS, params=payload)
+        response = requests.get(**params_api)
     except Exception as error:
-        raise KeyError(f'Сбой в работе программы: {error}')
+        raise EndpointError('Ошибка в запросе к API {error} с параметрами: '
+                            '{url}, {headers}, {params}'
+                            .format(**params_api, error=error))
     if response.status_code != HTTPStatus.OK:
-        raise requests.HTTPError(response)
+        raise HttpError('Ошибка соединения: {status}, {text}'.format(
+            status=response.status_code,
+            text=response.text))
     return response.json()
 
 
@@ -84,27 +89,34 @@ def parse_status(homework):
 
 def main():
     """Основная логика работы бота."""
-    problem = "Проблемы с переменными окружения"
-    logging.info('Бот начал работу')
     if not check_tokens():
-        logging.critical(problem)
-        raise sys.exit(problem)
+        logging.critical('Недоступны переменные окружения!')
+        sys.exit('Программа принудительно остановлена')
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time())
-
+    old_message = 'messages'
     while True:
         try:
-            homeworks = get_api_answer(timestamp)
-            check_response(homeworks)
-            if homeworks != []:
-                status = parse_status(homeworks.get("homeworks")[0])
-                send_message(bot, status)
-                logging.debug("Новый статус работы")
+            response = get_api_answer(timestamp)
+            homeworks = check_response(response)
+            if homeworks:
+                homework = homeworks[0]
+                status = parse_status(homework)
             else:
-                logging.debug("Нет нового статуса работы")
+                status = (f'За период от {timestamp}, изменений в домашних '
+                          'работах нет.')
+            if status != old_message:
+                old_message = status
+                send_message(bot=bot, message=status)
+            else:
+                logging.debug('Новые статусы отсутствуют')
+            timestamp = response.get('current_date', timestamp)
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
-            send_message(bot, message)
+            if message != old_message:
+                old_message = message
+                send_message(bot=bot, message=message)
+            logging.error(message, exc_info=True)
         finally:
             time.sleep(RETRY_PERIOD)
 
