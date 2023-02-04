@@ -4,6 +4,7 @@ import telegram
 import requests
 import sys
 import time
+from Exceptions import HTTPError, EndpointError
 from dotenv import load_dotenv
 from http import HTTPStatus
 
@@ -53,7 +54,7 @@ def get_api_answer(timestamp):
                             '{url}, {headers}, {params}'
                             .format(**params_api, error=error))
     if response.status_code != HTTPStatus.OK:
-        raise HttpError('Ошибка соединения: {status}, {text}'.format(
+        raise HTTPError('Ошибка соединения: {status}, {text}'.format(
             status=response.status_code,
             text=response.text))
     return response.json()
