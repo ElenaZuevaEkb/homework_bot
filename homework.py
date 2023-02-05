@@ -4,9 +4,11 @@ import telegram
 import requests
 import sys
 import time
-from Exceptions import HTTPError, EndpointError
+
 from dotenv import load_dotenv
 from http import HTTPStatus
+
+from Exceptions import HTTPError, EndpointError
 
 load_dotenv()
 
@@ -28,17 +30,18 @@ HOMEWORK_VERDICTS = {
 
 def check_tokens():
     """Функция проверки доступности переменных окружения."""
-    if all([PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID]):
-        return True
+    return all([PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID])
 
 
 def send_message(bot, message):
     """Начата отправка сообщений в ТГ."""
-    logging.debug('Сообщение отправлено')
+    logging.info('Начали отправку сообщения в Telegram')
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
     except telegram.TelegramError as error:
         logging.error(f'Сообщение не было отправлено {error}', exc_info=True)
+    else:
+        logging.debug('Сообщение отправлено')
 
 
 def get_api_answer(timestamp):
@@ -80,7 +83,7 @@ def parse_status(homework):
         raise KeyError("В ответе отсутствует ключ homework_name")
     homework_name = homework.get("homework_name")
     status = homework.get("status")
-    if status is None:
+    if not status:
         raise KeyError("В ответе отсутствует ключ status")
     if status not in (HOMEWORK_VERDICTS):
         raise ValueError(f"Неизвестный статус работы - {status}")
