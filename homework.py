@@ -1,14 +1,14 @@
 import os
 import logging
-import telegram
-import requests
 import sys
 import time
-
-from dotenv import load_dotenv
 from http import HTTPStatus
 
-from Exceptions import HTTPError, EndpointError
+import telegram
+import requests
+from dotenv import load_dotenv
+
+from exceptions import HTTPError, EndpointError
 
 load_dotenv()
 
