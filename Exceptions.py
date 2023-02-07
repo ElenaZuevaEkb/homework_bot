@@ -7,4 +7,4 @@ class HTTPError(Exception):
 class EndpointError(Exception):
     """Ошибка: эндпойнт не корректен."""
 
-    pass
+    pass ghdbtn
